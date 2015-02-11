@@ -34,11 +34,11 @@ int led = 13;
 /* MAIN CODE */
 
 void setup() {
-	pinMode(led, OUTPUT);
+    pinMode(led, OUTPUT);
     Serial.begin(9600);
     timeThreshCount = 0;
-	// threshFunc = &printThresh;
-	threshFunc = &blinkLed;
+    // threshFunc = &printThresh;
+    threshFunc = &blinkLed;
 }
 
 
@@ -71,25 +71,25 @@ void loop() {
     Serial.println(volts);
 
     if (volts <= volThresh) {
-		timeThreshCount++;
-	} else {
-		timeThreshCount = 0;
-	}
+        timeThreshCount++;
+    } else {
+        timeThreshCount = 0;
+    }
 
-	if (timeThreshCount >= timeThresh) {
-		threshFunc();
-		timeThreshCount = 0;
-	}
+    if (timeThreshCount >= timeThresh) {
+        threshFunc();
+        timeThreshCount = 0;
+    }
         
 }
 
 void blinkLed() {
-	/* Intentionally block thread, do not listen during blocking */
-	digitalWrite(led, HIGH);
-	delay(2000);
-	digitalWrite(led, LOW);
+    /* Intentionally block thread, do not listen during blocking */
+    digitalWrite(led, HIGH);
+    delay(2000);
+    digitalWrite(led, LOW);
 }
 
 void printThresh() {
-	Serial.println("*********REACHED A THRESHOLD!**********");
+    Serial.println("*********REACHED A THRESHOLD!**********");
 }
