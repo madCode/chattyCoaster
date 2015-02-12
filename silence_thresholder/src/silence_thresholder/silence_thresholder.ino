@@ -16,7 +16,7 @@ int timeThreshCount;
 
 /* Threshold for counting sample voltage as true noise. WARNING: need
  * to adjust based on audio input's hardware. */
-const float volThresh = 1.0f;
+const float volThresh = 0.5f;
 
 /* Function pointer to a function to activate after silence threshold
  * is achieved. */
