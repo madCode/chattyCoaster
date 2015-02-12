@@ -29,8 +29,8 @@ void trainPhrase(); // TODO
 float chattiness; // TODO
 
 /* Do not speak again for COOLDOWN milliseconds after speaking. */
-float cooldown;
-const float cooldownTime = 30000;
+int cooldown;
+const int cooldownTime = 30000;
 
 /* Threshold function declarations */
 void blinkLed();
@@ -73,11 +73,11 @@ void loop() {
         timeThreshCount = 0;
     }
 
-	if (cooldown > 0.0) {
+	if (cooldown > 0) {
 		cooldown -= sampleWindow;
 	}
 
-    if (timeThreshCount >= timeThresh && cooldown == 0) {
+    if (timeThreshCount >= timeThresh && cooldown <= 0) {
         threshFunc();
 		cooldown = cooldownTime;
         timeThreshCount = 0;
