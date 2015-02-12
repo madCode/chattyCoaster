@@ -55,6 +55,10 @@ void (*threshFunc)(void) = NULL;
 void blinkLed();
 void printThresh();
 
+/* Do not speak again for COOLDOWN milliseconds after speaking. */
+int cooldown;
+const int cooldownTime = 30000;
+
 unsigned int sample;
 unsigned int proceed = 0;
 
@@ -83,9 +87,38 @@ void loop()
     }
    //delay(10); //short delay for faster response to light.
    if (proceed) {
-   unsigned long startMillis= millis();  // Start of sample window
-    unsigned int peakToPeak = 0;   // peak-to-peak level
+      unsigned long startMillis= millis();  // Start of sample window
+      unsigned int peakToPeak = 0;   // peak-to-peak level
+  
+      unsigned int signalMax = 0;
+      unsigned int signalMin = 1024;
+  	
+      double volts = audioSample(startMillis);
+      Serial.print("Volts: ");
+      Serial.print(volts);
+      Serial.print(". Cooldown: ");
+      Serial.println(cooldown);
+  
+      if (volts <= volThresh) {
+          timeThreshCount++;
+      } else {
+          timeThreshCount = 0;
+      }
+  
+  	if (cooldown > 0) {
+  		cooldown -= sampleWindow;
+  	}
+  
+      if (timeThreshCount >= timeThresh && cooldown <= 0) {
+          threshFunc();
+  	  cooldown = cooldownTime;
+          timeThreshCount = 0;
+      }
+   }
+}
 
+double audioSample(unsigned long startMillis) {
+    unsigned int peakToPeak = 0;   // peak-to-peak level
     unsigned int signalMax = 0;
     unsigned int signalMin = 1024;
 
@@ -106,21 +139,7 @@ void loop()
         }
     }
     peakToPeak = signalMax - signalMin;  // max - min = peak-peak amplitude
-    double volts = (peakToPeak * 3.3) / 1024;  // convert to volts
-
-    Serial.println(volts);
-
-    if (volts <= volThresh) {
-        timeThreshCount++;
-    } else {
-        timeThreshCount = 0;
-    }
-
-    if (timeThreshCount >= timeThresh) {
-        threshFunc();
-        timeThreshCount = 0;
-    }
-   }
+	return (peakToPeak * 3.3) /1024; // convert to volts
 }
 
 void blinkLed() {
