@@ -1,7 +1,7 @@
-/****************************************
-Example Sound Level Sketch for the 
-Adafruit Microphone Amplifier
-****************************************/
+/*
+ * Silence Thresholder
+ * For Chatty Coasters
+ */
 
 /* DECLARATIONS */
 
@@ -11,7 +11,7 @@ const int sampleWindow = 50;
 
 /* After TIME_THRESH sampleWindows below VOL_THRESH, trigger event
  * 20Hz * 5S wait time = 100 */
-const int timeThresh = 100;
+int timeThresh = 100;
 int timeThreshCount;
 
 /* Threshold for counting sample voltage as true noise. WARNING: need
@@ -21,6 +21,16 @@ const float volThresh = 0.5f;
 /* Function pointer to a function to activate after silence threshold
  * is achieved. */
 void (*threshFunc)(void) = NULL;
+
+/* Function to run in setup to intially train the thresholder on how
+ * chatty the converstaion is. Chattiness is a factor from 0.1 to
+ * 1.0 representing quiet to loud. */
+void trainPhrase(); // TODO
+float chattiness; // TODO
+
+/* Do not speak again for COOLDOWN milliseconds after speaking. */
+float cooldown;
+const float cooldownTime = 30000;
 
 /* Threshold function declarations */
 void blinkLed();
@@ -39,6 +49,8 @@ void setup() {
     timeThreshCount = 0;
     // threshFunc = &printThresh;
     threshFunc = &blinkLed;
+
+	// trainPhrase();
 }
 
 
@@ -46,6 +58,35 @@ void loop() {
     unsigned long startMillis= millis();  // Start of sample window
     unsigned int peakToPeak = 0;   // peak-to-peak level
 
+    unsigned int signalMax = 0;
+    unsigned int signalMin = 1024;
+	
+	double volts = audioSample(startMillis);
+    Serial.print("Volts: ");
+	Serial.print(volts);
+	Serial.print(". Cooldown: ");
+	Serial.println(cooldown);
+
+    if (volts <= volThresh) {
+        timeThreshCount++;
+    } else {
+        timeThreshCount = 0;
+    }
+
+	if (cooldown > 0.0) {
+		cooldown -= sampleWindow;
+	}
+
+    if (timeThreshCount >= timeThresh && cooldown == 0) {
+        threshFunc();
+		cooldown = cooldownTime;
+        timeThreshCount = 0;
+    }
+        
+}
+
+double audioSample(unsigned long startMillis) {
+    unsigned int peakToPeak = 0;   // peak-to-peak level
     unsigned int signalMax = 0;
     unsigned int signalMin = 1024;
 
@@ -66,21 +107,11 @@ void loop() {
         }
     }
     peakToPeak = signalMax - signalMin;  // max - min = peak-peak amplitude
-    double volts = (peakToPeak * 3.3) / 1024;  // convert to volts
+	return (peakToPeak * 3.3) /1024; // convert to volts
+}
 
-    Serial.println(volts);
-
-    if (volts <= volThresh) {
-        timeThreshCount++;
-    } else {
-        timeThreshCount = 0;
-    }
-
-    if (timeThreshCount >= timeThresh) {
-        threshFunc();
-        timeThreshCount = 0;
-    }
-        
+void trainPhrase() {
+	// machine learning jazz maybe
 }
 
 void blinkLed() {
@@ -93,3 +124,4 @@ void blinkLed() {
 void printThresh() {
     Serial.println("*********REACHED A THRESHOLD!**********");
 }
+
