@@ -56,7 +56,7 @@ void printThresh();
 
 /* Do not speak again for COOLDOWN milliseconds after speaking. */
 int cooldown;
-const int cooldownTime = 30000;
+const int cooldownTime = 3000;
 
 unsigned int sample;
 unsigned int proceed = 0;
@@ -65,13 +65,17 @@ const int RED_PIN = 9;
 const int GREEN_PIN = 10;
 const int BLUE_PIN = 11;
 
-int DISPLAY_TIME = 50;  // In milliseconds
+int DISPLAY_TIME = 20;  // In milliseconds
 
 int color = 0;
 
+int x;
+unsigned int currAudio;
+const unsigned int maxAudioFile = 6; 
 
 void setup()
 {
+	x = 0;
     wtv020sd16p.reset();
     Serial.begin(9600);  //Begin serial communcation
     pinMode( ledRed, OUTPUT);
@@ -81,6 +85,7 @@ void setup()
     timeThreshCount = 0;
     //threshFunc = &blinkLed;
     threshFunc = &playSong;
+	currAudio = 0;
 }
 
 void loop()
@@ -88,25 +93,26 @@ void loop()
     Serial.println(analogRead(sensorPin)); //Write the value of the photoresistor to the serial monitor.
     int light = analogRead(sensorPin);
     if (light < 700){
-      analogWrite(ledBlue, 255);
+      analogWrite(BLUE_PIN, 255);
       proceed = 1;
+	  if (x<768){
+        showRGB(x);  
+        x++;  
+      } else {
+        x=0;
+        showRGB(x);
+      }
     }
     else{
-      analogWrite(ledBlue, 0);
+      analogWrite(BLUE_PIN, 0);
       proceed = 0;
-    }
-    
-    if (x<768){
-      showRGB(x);  
-      x++;  
-    } else {
-      x=0;
-      showRGB(x);
+	  lightsOff();
     }
     
     delay(DISPLAY_TIME);
+	Serial.print("x: ");
+	Serial.println(x);
 
-   //delay(10); //short delay for faster response to light.
    if (proceed) {
       unsigned long startMillis= millis();  // Start of sample window
       unsigned int peakToPeak = 0;   // peak-to-peak level
@@ -204,7 +210,22 @@ analogWrite(BLUE_PIN, blueIntensity);
 analogWrite(GREEN_PIN, greenIntensity);
 }
 
+void lightsOff() {
+	analogWrite(RED_PIN, 0);
+	analogWrite(BLUE_PIN, 0);
+	analogWrite(GREEN_PIN, 0);
+}
+
 void playSong()
+{
+	wtv020sd16p.asyncPlayVoice(currAudio);
+	if (++currAudio >= maxAudioFile) {
+		currAudio = 0;
+	}
+}
+
+
+void playSongClipped()
 {
   wtv020sd16p.asyncPlayVoice(0);
   delay(2000);
