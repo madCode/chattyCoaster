@@ -35,3 +35,6 @@
 
 # Silence Thresholder
 silence_thresholder/.build/*
+
+# Combined Code
+combinedCode/.build/*

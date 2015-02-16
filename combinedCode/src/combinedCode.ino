@@ -44,7 +44,7 @@ int timeThreshCount;
 
 /* Threshold for counting sample voltage as true noise. WARNING: need
  * to adjust based on audio input's hardware. */
-const float volThresh = 2.0f;
+const float volThresh = 0.5f;
 
 /* Function pointer to a function to activate after silence threshold
  * is achieved. */
@@ -65,17 +65,16 @@ const int RED_PIN = 9;
 const int GREEN_PIN = 10;
 const int BLUE_PIN = 11;
 
-int DISPLAY_TIME = 20;  // In milliseconds
+int DISPLAY_TIME = 10;  // In milliseconds
 
 int color = 0;
-
-int x;
+int currColorVal;
 unsigned int currAudio;
-const unsigned int maxAudioFile = 6; 
+const unsigned int maxAudioFile = 15; 
 
 void setup()
 {
-	x = 0;
+	currAudio = 0;
     wtv020sd16p.reset();
     Serial.begin(9600);  //Begin serial communcation
     pinMode( ledRed, OUTPUT);
@@ -92,26 +91,24 @@ void loop()
 {
     Serial.println(analogRead(sensorPin)); //Write the value of the photoresistor to the serial monitor.
     int light = analogRead(sensorPin);
-    if (light < 700){
-      analogWrite(BLUE_PIN, 255);
+    if (light < 600) {
       proceed = 1;
-	  if (x<768){
-        showRGB(x);  
-        x++;  
+	  if (currColorVal < 768){
+        showRGB(currColorVal);  
+        currColorVal += 2;  
       } else {
-        x=0;
-        showRGB(x);
+        currColorVal = 0;
+        showRGB(currColorVal);
       }
     }
     else{
-      analogWrite(BLUE_PIN, 0);
       proceed = 0;
 	  lightsOff();
     }
     
     delay(DISPLAY_TIME);
-	Serial.print("x: ");
-	Serial.println(x);
+	Serial.print("currColorVal: ");
+	Serial.println(currColorVal);
 
    if (proceed) {
       unsigned long startMillis= millis();  // Start of sample window
@@ -178,42 +175,31 @@ void blinkLed() {
 
 void showRGB(int color)
 {
-int redIntensity;
-int greenIntensity;
-int blueIntensity;
-
 
 if (color <= 255)          // zone 1
 {
-redIntensity = 255 - color;    // red goes from on to off
-greenIntensity = color;        // green goes from off to on
-blueIntensity = 0;             // blue is always off
+	digitalWrite(RED_PIN, HIGH);
+	digitalWrite(BLUE_PIN, LOW);
+	digitalWrite(GREEN_PIN, LOW);
 }
 else if (color <= 511)     // zone 2
 {
-redIntensity = 0;                     // red is always off
-greenIntensity = 255 - (color - 256); // green on to off
-blueIntensity = (color - 256);        // blue off to on
+	digitalWrite(RED_PIN, LOW);
+	digitalWrite(BLUE_PIN, HIGH);
+	digitalWrite(GREEN_PIN, LOW);
 }
 else // color >= 512       // zone 3
 {
-redIntensity = (color - 512);         // red off to on
-greenIntensity = 0;                   // green is always off
-blueIntensity = 255 - (color - 512);  // blue on to off
+	digitalWrite(RED_PIN, LOW);
+	digitalWrite(BLUE_PIN, LOW);
+	digitalWrite(GREEN_PIN, HIGH);
 }
-
-// Now that the brightness values have been set, command the LED
-// to those values
-
-analogWrite(RED_PIN, redIntensity);
-analogWrite(BLUE_PIN, blueIntensity);
-analogWrite(GREEN_PIN, greenIntensity);
 }
 
 void lightsOff() {
-	analogWrite(RED_PIN, 0);
-	analogWrite(BLUE_PIN, 0);
-	analogWrite(GREEN_PIN, 0);
+	digitalWrite(RED_PIN, LOW);
+	digitalWrite(BLUE_PIN, LOW);
+	digitalWrite(GREEN_PIN, LOW);
 }
 
 void playSong()
